@@ -21,13 +21,6 @@ Resource Group
 App Service Plan (Linux, Free tier)
 Linux Web App with Node.js 18
 
-## Architecture ##
-
-[Source Code] ---> [Azure Pipeline] ---> [Azure App Service]
-                        |
-                        v
-                  [Terraform IaC]
-
 # --------------- Quick Start -----------------  #
 
 ## Prerequisites ##
