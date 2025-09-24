@@ -1,0 +1,105 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  nodeVersion: '18.x'
+  azureSubscription: 'azure-service-connection'
+  resourceGroupName: 'rg-hello-world'
+  appServiceName: 'hello-world-app'
+  location: 'Central India'
+  terraformVersion: '1.5.0'
+
+stages:
+  # Stage 1: Build and Test
+  - stage: BuildAndTest
+    jobs:
+      - job: Build
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '$(nodeVersion)'
+          - script: |
+              npm ci
+              npm test
+            displayName: 'Install & Test'
+          - task: ArchiveFiles@2
+            inputs:
+              rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+              replaceExistingArchive: true
+              excludePaths: |
+                node_modules
+                .git
+                terraform
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              ArtifactName: 'drop'
+
+  # Stage 2: Deploy Infrastructure
+  - stage: DeployInfrastructure
+    dependsOn: BuildAndTest
+    jobs:
+      - job: Terraform
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+          - task: TerraformInstaller@0
+            inputs:
+              terraformVersion: '$(terraformVersion)'
+          - task: TerraformTaskV3@3
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: 'terraform'
+              backendServiceArm: '$(azureSubscription)'
+          - task: TerraformTaskV3@3
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              workingDirectory: 'terraform'
+              environmentServiceNameAzureRM: '$(azureSubscription)'
+              commandOptions: '-auto-approve'
+
+  # Stage 3: Deploy Application
+  - stage: DeployApplication
+    dependsOn: DeployInfrastructure
+    jobs:
+      - job: Deploy
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: DownloadBuildArtifacts@0
+            inputs:
+              buildType: 'current'
+              artifactName: 'drop'
+              downloadPath: '$(System.ArtifactsDirectory)'
+          - task: AzureWebApp@1
+            inputs:
+              azureSubscription: '$(azureSubscription)'
+              appType: 'webAppLinux'
+              appName: '$(appServiceName)'
+              runtimeStack: 'NODE|18-lts'
+              package: '$(System.ArtifactsDirectory)/drop/app.zip'
+          - script: |
+              echo "Checking app health..."
+              for i in {1..5}; do
+                code=$(curl -s -o /dev/null -w "%{http_code}" https://$(appServiceName).azurewebsites.net/health)
+                if [ "$code" == "200" ]; then
+                  echo "✓ Health check passed"
+                  exit 0
+                fi
+                echo "Retry $i..."
+                sleep 5
+              done
+              echo "✗ Health check failed"
+              exit 1
+            displayName: "Health Check"

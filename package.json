@@ -1,0 +1,29 @@
+{
+  "name": "azure-devops-hello-world",
+  "version": "1.0.0",
+  "description": "Simple Node.js app for Azure DevOps CI/CD demo",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "4.18.2"
+  },
+  "devDependencies": {
+    "jest": "29.7.0",
+    "nodemon": "3.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "nodejs",
+    "azure",
+    "devops",
+    "cicd"
+  ],
+  "author": "DevOps Team",
+  "license": "MIT"
+}
