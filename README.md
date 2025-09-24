@@ -22,16 +22,14 @@ App Service Plan (Linux, Free tier)
 Linux Web App with Node.js 18
 
 ## Architecture ##
-┌───────────────┐      ┌─────────────────┐      ┌──────────────────┐
-│   Source Code │ ───▶ │  Azure Pipeline │ ───▶ │ Azure App Service │
-└───────────────┘      └─────────────────┘      └──────────────────┘
+
+│   Source Code  ───▶ │  Azure Pipeline │ ───▶ │ Azure App Service │
                                 │
                                 ▼
-                       ┌─────────────────┐
-                       │   Terraform IaC │
-                       └─────────────────┘
 
-# ----------------------------------- Quick Start -----------------------------------  #
+                       │   Terraform IaC │
+
+# --------------- Quick Start -----------------  #
 
 ## Prerequisites ##
 Azure subscription
